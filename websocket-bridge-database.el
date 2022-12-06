@@ -98,8 +98,7 @@
   "Open `websocket-bridge-database' buffer by NAME."
   (setq websocket-bridge-database-data-component nil)
   (setq websocket-bridge-database-meta-component nil)
-  (get-buffer-create "*websocket-bridge-database*")
-  (with-current-buffer "*websocket-bridge-database*"
+  (with-current-buffer (get-buffer-create "*websocket-bridge-database-meta*")
     (setq buffer-read-only nil)
     (erase-buffer)
     (setq websocket-bridge-database-db-name name)
@@ -116,9 +115,8 @@
     (websocket-bridge-database-show-databases name)
     (websocket-bridge-database-meta)
     (goto-char (point-max))
-    (insert "\nThe Data is: \n\n")
     (setq buffer-read-only t))
-  (switch-to-buffer "*websocket-bridge-database*"))
+  (switch-to-buffer "*websocket-bridge-database-meta*"))
 
 (defun websocket-bridge-database-show-databases (db-name)
   "Call python show databases about DB-NAME."
@@ -251,8 +249,7 @@ TYPE is database meta type"
                  (websocket-bridge-database-buttonize "order"))
            (list "Database Limit"
                  (websocket-bridge-database-buttonize "limit"))
-           (list "Database Sql"
-                 (websocket-bridge-database-buttonize "sql"))))
+           (list "SQL" (websocket-bridge-database-buttonize "sql"))))
          (column-model
           (mapcar
            (lambda (name)
@@ -264,7 +261,7 @@ TYPE is database meta type"
       (if websocket-bridge-database-meta-component
           (ctbl:cp-set-model websocket-bridge-database-meta-component model)
         (setq websocket-bridge-database-meta-component
-              (with-current-buffer "*websocket-bridge-database*"
+              (with-current-buffer "*websocket-bridge-database-meta*"
                 (setq buffer-read-only nil)
                 (goto-char (point-max))
                 (ctbl:create-table-component-region :model model :param param)))))))
@@ -282,10 +279,11 @@ TYPE is database meta type"
       (if websocket-bridge-database-data-component
           (ctbl:cp-set-model websocket-bridge-database-data-component model)
         (setq websocket-bridge-database-data-component
-              (with-current-buffer "*websocket-bridge-database*"
+              (with-current-buffer (get-buffer-create "*websocket-bridge-database-data*")
                 (setq buffer-read-only nil)
                 (goto-char (point-max))
-                (ctbl:create-table-component-region :model model)))))))
+                (ctbl:create-table-component-region :model model))))
+      (pop-to-buffer "*websocket-bridge-database-data*"))))
 
 (provide 'websocket-bridge-database)
 ;;; websocket-bridge-database.el ends here
