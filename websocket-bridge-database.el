@@ -51,8 +51,9 @@
 
 (defvar websocket-bridge-database-db-limit "10")
 
+
 (defun websocket-bridge-database-start ()
-  "Start websocket-bridge-database-start."
+  "Start websocket bridge database."
   (interactive)
   (websocket-bridge-app-start
    "database"
@@ -94,11 +95,12 @@
     (websocket-bridge-call "database" "new_database" name db-type host port username password)))
 
 (defun websocket-bridge-database-open (name)
-  "Open websocket-bridge-database buffer by NAME."
+  "Open `websocket-bridge-database' buffer by NAME."
   (setq websocket-bridge-database-data-component nil)
   (setq websocket-bridge-database-meta-component nil)
   (get-buffer-create "*websocket-bridge-database*")
   (with-current-buffer "*websocket-bridge-database*"
+    (setq buffer-read-only nil)
     (erase-buffer)
     (setq websocket-bridge-database-db-name name)
     (let ((meta
@@ -114,7 +116,8 @@
     (websocket-bridge-database-show-databases name)
     (websocket-bridge-database-meta)
     (goto-char (point-max))
-    (insert "\nThe Data is: \n\n"))
+    (insert "\nThe Data is: \n\n")
+    (setq buffer-read-only t))
   (switch-to-buffer "*websocket-bridge-database*"))
 
 (defun websocket-bridge-database-show-databases (db-name)
@@ -123,12 +126,12 @@
 
 
 (defun websocket-bridge-database-stop ()
-  "Stop websocket-bridge-database."
+  "Stop websocket bridge database."
   (interactive)
   (websocket-bridge-app-exit "database"))
 
 (defun websocket-bridge-database-restart ()
-  "Restart websocket-bridge-database."
+  "Restart websocket bridge database."
   (interactive)
   (websocket-bridge-database-stop)
   (websocket-bridge-database-start))
@@ -147,10 +150,11 @@
 (defun websocket-bridge-database-build-sql()
   "Build sql."
   (let ((selected-items websocket-bridge-database-db-selected-items)
-        (table websocket-bridge-database-db-table)
-        (where websocket-bridge-database-db-where)
-        (order websocket-bridge-database-db-order)
-        (limit websocket-bridge-database-db-limit)
+        (table (ignore-errors websocket-bridge-database-db-table))
+        (where
+         (ignore-errors ignores websocket-bridge-database-db-where))
+        (order (ignore-errors websocket-bridge-database-db-order))
+        (limit (ignore-errors websocket-bridge-database-db-limit))
         sql)
     (if (and selected-items table)
         (progn
@@ -177,7 +181,13 @@ TYPE is database meta type"
                                                   (hash-table-keys websocket-bridge-database-db-metas)))
     ("database"
      (websocket-bridge-database-select-candidates type websocket-bridge-database-db-databases)
-     (websocket-bridge-database-show-tables websocket-bridge-database-db-name websocket-bridge-database-db-database))
+     (websocket-bridge-database-show-tables websocket-bridge-database-db-name websocket-bridge-database-db-database)
+     (ignore-errors
+       (set websocket-bridge-database-db-table nil)
+       (set websocket-bridge-database-db-selected-items "*")
+       (set websocket-bridge-database-db-where nil)
+       (set websocket-bridge-database-db-order nil)
+       (set websocket-bridge-database-db-limit "10")))
     ("table"
      (websocket-bridge-database-select-candidates type websocket-bridge-database-db-tables))
     ("selected-items"
@@ -198,7 +208,7 @@ TYPE is database meta type"
   (save-excursion
     (websocket-bridge-database-build-sql)
     (websocket-bridge-database-meta)
-    (when websocket-bridge-database-db-sql
+    (when (ignore-errors websocket-bridge-database-db-sql)
       (websocket-bridge-database-refresh-data
        websocket-bridge-database-db-name
        websocket-bridge-database-db-database

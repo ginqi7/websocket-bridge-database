@@ -9,7 +9,7 @@ import websocket_bridge_python
 from sexpdata import dumps
 
 database_configs = {}
-connections = {}
+
 
 class DatabaseConnectInfo(dict):
     '''Database Connect Info Class'''
@@ -119,9 +119,11 @@ async def run_and_log(cmd):
 async def new_database(db_name:str, info:DatabaseConnectInfo):
     "new a database connect"
     try:
-        connections[db_name] = info.connect()
         database_configs[db_name] = info
         save_database_config(database_configs)
+        await bridge.eval_in_emacs(f'''(setq websocket-bridge-database-db-metas
+        (ht<-plist '{dumps(database_configs).replace(':', '')}))''')
+
     except Exception as e:
         print(e)
         await bridge.message_to_emacs("database connect error")
@@ -133,7 +135,7 @@ def save_database_config(configs:dict):
 
 async def init():
     '''init'''
-    global database_configs, connections, db_config_file_path
+    global database_configs, db_config_file_path
     user_data_directory = await bridge.get_emacs_var("websocket-bridge-database-user-data-directory")
     user_data_directory = user_data_directory.strip('"')
     user_data_directory = os.path.expanduser(user_data_directory)
