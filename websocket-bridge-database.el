@@ -26,6 +26,7 @@
 
 (require 'ctable)
 (require 'websocket-bridge)
+(require 'ht)
 
 (defgroup websocket-bridge-database
   ()
@@ -149,8 +150,7 @@
   "Build sql."
   (let ((selected-items websocket-bridge-database-db-selected-items)
         (table (ignore-errors websocket-bridge-database-db-table))
-        (where
-         (ignore-errors ignores websocket-bridge-database-db-where))
+        (where (ignore-errors websocket-bridge-database-db-where))
         (order (ignore-errors websocket-bridge-database-db-order))
         (limit (ignore-errors websocket-bridge-database-db-limit))
         sql)
