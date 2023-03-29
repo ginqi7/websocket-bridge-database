@@ -75,6 +75,14 @@ async def on_message(message:str):
         if data:
             data = [item[0] for item in data]
             await run_and_log(f"(setq websocket-bridge-database-db-tables'{dumps(data)})")
+    if cmd == "show_columns":
+        db_name = info[1][1]
+        database = info[1][2]
+        table_name = info[1][3]
+        _, data = await run_sql(db_name, f"SHOW COLUMNS FROM {table_name}", database)
+        if data:
+            data = [item[0] for item in data]
+            await run_and_log(f"(setq websocket-bridge-database-db-columns'{dumps(data)})")
 
 bridge = websocket_bridge_python.bridge_app_regist(on_message)
 

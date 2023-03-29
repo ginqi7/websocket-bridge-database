@@ -144,7 +144,7 @@
   "Select CANDIDATES and set value to variable bind TYPE."
   (set
    (intern (format "websocket-bridge-database-db-%s" type))
-   (completing-read (format "Select %s: " type) candidates nil t)))
+   (string-join (completing-read-multiple (format "Select %s: " type) candidates nil t) ",")))
 
 (defun websocket-bridge-database-build-sql()
   "Build sql."
@@ -189,8 +189,10 @@ TYPE is database meta type"
     ("table"
      (websocket-bridge-database-select-candidates type websocket-bridge-database-db-tables))
     ("selected-items"
-     (setq websocket-bridge-database-db-selected-items
-           (websocket-bridge-database-read-from-minibuffer "Please input where conditions: ")))
+     (websocket-bridge-database-select-candidates type websocket-bridge-database-db-columns)
+     ;; (setq websocket-bridge-database-db-selected-items
+     ;;       (websocket-bridge-database-read-from-minibuffer "Please input where conditions: "))
+     )
     ("where"
      (setq websocket-bridge-database-db-where
            (websocket-bridge-database-read-from-minibuffer "Please input where conditions: "))
@@ -215,6 +217,10 @@ TYPE is database meta type"
 (defun websocket-bridge-database-show-tables (db-name database)
   "Show tables in DB-NAME and DATABASE."
   (websocket-bridge-call "database" "show_tables" db-name database))
+
+(defun websocket-bridge-database-show-columns (db-name database table-name)
+  "Show columns in DB-NAME and DATABASE and TABLE-NAME."
+  (websocket-bridge-call "database" "show_columns" db-name database table-name))
 
 (defun websocket-bridge-database-buttonize (type)
   "Create a buttonize string with TYPE."
