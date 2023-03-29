@@ -52,6 +52,8 @@
 
 (defvar websocket-bridge-database-db-limit "10")
 
+(defvar websocket-bridge-database-refresh-data-ready t)
+
 
 (defun websocket-bridge-database-start ()
   "Start websocket bridge database."
@@ -173,6 +175,7 @@ PROMPT is `read-string' prompt."
 (defun websocket-bridge-database-update-meta (type)
   "Update database meta view.
 TYPE is database meta type"
+  (setq websocket-bridge-database-refresh-data-ready t)
   (pcase type
     ("name"
      (websocket-bridge-database-select-candidates type
@@ -187,7 +190,9 @@ TYPE is database meta type"
        (set websocket-bridge-database-db-order nil)
        (set websocket-bridge-database-db-limit "10")))
     ("table"
-     (websocket-bridge-database-select-candidates type websocket-bridge-database-db-tables))
+     (websocket-bridge-database-select-candidates type websocket-bridge-database-db-tables)
+     (websocket-bridge-database-show-columns websocket-bridge-database-db-name websocket-bridge-database-db-database websocket-bridge-database-db-table)
+     )
     ("selected-items"
      (websocket-bridge-database-select-candidates type websocket-bridge-database-db-columns ",")
      )
@@ -200,16 +205,53 @@ TYPE is database meta type"
      )
     ("limit"
      (setq websocket-bridge-database-db-limit
-           (websocket-bridge-database-read-from-minibuffer "Please input limit: "))))
+           (websocket-bridge-database-read-from-minibuffer "Please input limit: ")))
+    ("sql"
+     (setq websocket-bridge-database-refresh-data-ready nil)
+     (websocket-bridge-database-write-sql-file websocket-bridge-database-db-sql)
+     )
+    )
+  (when websocket-bridge-database-refresh-data-ready
+    (save-excursion
+      (websocket-bridge-database-build-sql)
+      (websocket-bridge-database-meta)
+      (when (ignore-errors websocket-bridge-database-db-sql)
+        (websocket-bridge-database-refresh-data
+         websocket-bridge-database-db-name
+         websocket-bridge-database-db-database
+         websocket-bridge-database-db-sql)))))
 
-  (save-excursion
-    (websocket-bridge-database-build-sql)
+(defun websocket-bridge-database-write-sql-file (sql)
+  "Write SQL in a file."
+  (let ((temp-file
+         (make-temp-file
+          (format "%s__%s__%s" websocket-bridge-database-db-name
+                  websocket-bridge-database-db-database
+                  websocket-bridge-database-db-table)
+          nil ".sql" sql))
+        origin-buffer
+        (current-buffer))
+    (find-file temp-file)
+    (switch-to-buffer origin-buffer)
+    (pop-to-buffer (get-file-buffer temp-file)))
+  )
+
+(defun websocket-bridge-database-apply-sql-file ()
+  "Apply SQL in a file."
+  (interactive)
+  (let ((sql (buffer-substring-no-properties (point-min) (point-max)))
+        )
+    (setq websocket-bridge-database-db-sql sql)
+    (kill-current-buffer)
+    (switch-to-buffer "*websocket-bridge-database-meta*")
     (websocket-bridge-database-meta)
     (when (ignore-errors websocket-bridge-database-db-sql)
       (websocket-bridge-database-refresh-data
        websocket-bridge-database-db-name
        websocket-bridge-database-db-database
-       websocket-bridge-database-db-sql))))
+       websocket-bridge-database-db-sql)))
+  )
+
 
 (defun websocket-bridge-database-show-tables (db-name database)
   "Show tables in DB-NAME and DATABASE."
@@ -279,7 +321,7 @@ TYPE is database meta type"
          (model
           (make-ctbl:model :column-model column-model :data data)))
     (save-excursion
-      (if websocket-bridge-database-data-component
+      (if (and websocket-bridge-database-data-component (get-buffer "*websocket-bridge-database-data*"))
           (ctbl:cp-set-model websocket-bridge-database-data-component model)
         (setq websocket-bridge-database-data-component
               (with-current-buffer (get-buffer-create "*websocket-bridge-database-data*")
