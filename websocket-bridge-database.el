@@ -140,11 +140,11 @@
   (websocket-bridge-call "database" "run_sql" db-name database sql))
 
 
-(defun websocket-bridge-database-select-candidates (type candidates)
+(defun websocket-bridge-database-select-candidates (type candidates &optional separator)
   "Select CANDIDATES and set value to variable bind TYPE."
   (set
    (intern (format "websocket-bridge-database-db-%s" type))
-   (string-join (completing-read-multiple (format "Select %s: " type) candidates nil t) ",")))
+   (string-join (completing-read-multiple (format "Select %s: " type) candidates nil t) separator)))
 
 (defun websocket-bridge-database-build-sql()
   "Build sql."
@@ -189,18 +189,15 @@ TYPE is database meta type"
     ("table"
      (websocket-bridge-database-select-candidates type websocket-bridge-database-db-tables))
     ("selected-items"
-     (websocket-bridge-database-select-candidates type websocket-bridge-database-db-columns)
-     ;; (setq websocket-bridge-database-db-selected-items
-     ;;       (websocket-bridge-database-read-from-minibuffer "Please input where conditions: "))
+     (websocket-bridge-database-select-candidates type websocket-bridge-database-db-columns ",")
      )
     ("where"
-     (setq websocket-bridge-database-db-where
-           (websocket-bridge-database-read-from-minibuffer "Please input where conditions: "))
+     (websocket-bridge-database-select-candidates type (append '("(" ")" "and" "or") websocket-bridge-database-db-columns) " ")
      (when (string= websocket-bridge-database-db-where "")
        (setq websocket-bridge-database-db-where nil)))
     ("order"
-     (setq websocket-bridge-database-db-order
-           (websocket-bridge-database-read-from-minibuffer "Please input Order By: ")))
+     (websocket-bridge-database-select-candidates type websocket-bridge-database-db-columns ",")
+     )
     ("limit"
      (setq websocket-bridge-database-db-limit
            (websocket-bridge-database-read-from-minibuffer "Please input limit: "))))
