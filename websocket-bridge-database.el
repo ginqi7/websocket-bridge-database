@@ -233,7 +233,10 @@ TYPE is database meta type"
         (current-buffer))
     (find-file temp-file)
     (switch-to-buffer origin-buffer)
-    (pop-to-buffer (get-file-buffer temp-file)))
+    (pop-to-buffer (get-file-buffer temp-file))
+    (local-set-key (kbd "C-c C-c") 'websocket-bridge-database-apply-sql-file)
+    (setq-local header-line-format "You could use C-c C-c to run `websocket-bridge-database-apply-sql-file`")
+    )
   )
 
 (defun websocket-bridge-database-apply-sql-file ()
@@ -320,6 +323,10 @@ TYPE is database meta type"
            column-names))
          (model
           (make-ctbl:model :column-model column-model :data data)))
+    (when (get-buffer "*websocket-bridge-database-data*")
+      (kill-buffer (get-buffer "*websocket-bridge-database-data*"))
+      )
+
     (save-excursion
       (if (and websocket-bridge-database-data-component (get-buffer "*websocket-bridge-database-data*"))
           (ctbl:cp-set-model websocket-bridge-database-data-component model)
